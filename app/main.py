@@ -8,6 +8,11 @@ from fastapi import Depends
 from time import perf_counter
 from app.db import get_session
 from app.service import get_products_service
+from fastapi import Depends
+from time import perf_counter
+from app.db import get_session
+from app.service import get_products_service
+from app.cache import ping_redis
 
 
 
@@ -42,9 +47,11 @@ def health():
         "cache_enabled": settings.CACHE_ENABLED,
     }
 
+
+
 @app.get("/products")
-def get_products(category: str, session = Depends(get_session)):
+def get_products(category: str, db_only: bool = False, session = Depends(get_session)):
     t0 = perf_counter()
-    items, meta = get_products_service(session, category)
+    items, meta = get_products_service(session, category, db_only=db_only)
     meta["latency_ms"] = round((perf_counter() - t0) * 1000, 2)
     return {"items": items, "meta": meta}
